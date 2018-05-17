@@ -1,5 +1,5 @@
 import numpy as np
-    
+
 ######################################
 #  Feedforward Neural network (FNN)
 ######################################
@@ -16,7 +16,7 @@ class FNN(object):
         cross-entropy) would be automatically added to the
         FNN.
 
-        Input: 
+        Input:
           input_dim: dimension of input.
           output_dim: dimension of output (number of labels).
           sizes: a list of integers specifying the number of
@@ -42,13 +42,13 @@ class FNN(object):
         Iteratively propagate the activations (starting from
         input data) through each layer, and output a
         probability distribution among labels (probs), and
-        if labels are given, also compute the loss. 
+        if labels are given, also compute the loss.
         """
         inputs = data
         for layer in self.layers:
             outputs = layer.forward(inputs)
             inputs = outputs
-            
+
         probs = softmax(outputs)
         if labels is not None:
             return probs, self.loss(outputs, labels)
@@ -57,7 +57,7 @@ class FNN(object):
 
     def backprop(self, labels):
         """Backward propagate the gradients/derivatives through the network.
-        
+
         Iteratively propagate the gradients/derivatives (starting from
         outputs) through each layer, and save gradients/derivatives of
         each parameter (weights or bias) in the layer.
@@ -74,7 +74,7 @@ class FNN(object):
     def d_loss(self, outputs, labels):
         "Compute derivatives of the cross entropy softmax loss w.r.t the outputs."
         return d_mean_cross_entropy_softmax(outputs, labels)
-        
+
     def predict(self, data):
         "Predict the labels of the data."
         probs, _ = self.forwardprop(data)
@@ -84,7 +84,7 @@ class FNN(object):
 class Layer(object):
     def __init__(self, shape, activ_func):
         "Implements a layer of a NN."
-      
+
         self.w = np.random.uniform(-np.sqrt(2.0 / shape[0]),
                                    np.sqrt(2.0 / shape[0]),
                                    size=shape)
@@ -99,7 +99,7 @@ class Layer(object):
 
     def forward(self, inputs):
         """Forward propagate the activation through the layer.
-        
+
         Given the inputs (activation of previous layers),
         compute and save the activation of current layer,
         then return it as output.
@@ -121,8 +121,8 @@ class Layer(object):
         # (plus the common arithmetic functions).
 
         # For all the numpy functions, use google and numpy manual for
-        # more details and examples.        
-        
+        # more details and examples.
+
         # Object fields you will use:
         # self.w:
         #     weight matrix, a matrix with shape (H_-1, H).
@@ -140,20 +140,21 @@ class Layer(object):
         # Code you need to fill in: 2 lines.
         #########################################################
         # Modify the right hand side of the following code.
-        
+
         # The linear transformation.
         # scores:
         #     weighted sum of inputs plus bias, a matrix of shape (N, H).
         #     N is the number of data points.
         #     H is the number of hidden units in this layer.
-        scores = np.zeros((inputs.shape[0], self.w.shape[1]))
+        # scores = np.zeros((inputs.shape[0], self.w.shape[1]))
+        scores = np.dot(inputs, self.w) + self.b
 
         # The non-linear transformation.
         # outputs:
         #     activations of this layer, a matrix of shape (N, H).
         #     N is the number of data points.
         #     H is the number of hidden units in this layer.
-        activations = np.zeros_like(scores)
+        activations = self.activate(scores)
 
         # End of the code to modify
         #########################################################
@@ -169,7 +170,7 @@ class Layer(object):
 
     def backward(self, d_outputs):
         """Backward propagate the gradient through this layer.
-        
+
         Given the gradient w.r.t the output of this layer
         (d_outputs), compute and save the gradient w.r.t the
         weights (d_w) and bias (d_b) of this layer and
@@ -177,7 +178,7 @@ class Layer(object):
         """
         ###################################
         # Question 2
-        
+
         # Instructions
 
         # Compute the derivatives of the loss w.r.t the weights and bias
@@ -186,7 +187,7 @@ class Layer(object):
 
         # Naming convention: use d_var to store the
         # derivative of the loss w.r.t the variable.
-        
+
         # Functions you will use:
         # np.dot (numpy.dot): numpy function to compute dot product of two matrix.
         # np.mean or np.sum (numpy.mean or numpy.sum):
@@ -200,10 +201,10 @@ class Layer(object):
         #     See d_relu as an example.
         # (plus the common arithmetic functions).
         # np.transpose or m.T (m is an numpy array): transpose a matrix.
-        
+
         # For all the numpy functions, use google and numpy manual for
         # more details and examples.
-        
+
         # Object fields you will use:
         # self.w: weight matrix, a matrix with shape (H_-1, H).
         #         H_-1 is the number of hidden units in previous layer
@@ -230,36 +231,40 @@ class Layer(object):
         #     A matrix of shape (N, H)
         #     N is the number of data points.
         #     H is the number of hidden units in this layer.
-        d_scores = np.zeros_like(self.a)
+        # d_scores = np.zeros_like(self.a)
+        d_scores = d_outputs * self.d_activate(self.a)
 
         # self.d_b:
         #     Derivatives of the loss w.r.t the bias, averaged over all data points.
         #     A matrix of shape (1, H)
         #     H is the number of hidden units in this layer.
-        self.d_b = np.zeros_like(self.b)
+        # self.d_b = np.zeros_like(self.b)
+        self.d_b = np.sum(d_scores, axis=0)
 
         # self.d_w:
         #     Derivatives of the loss w.r.t the weight matrix, averaged over all data points.
         #     A matrix of shape (H_-1, H)
         #     H_-1 is the number of hidden units in previous layer
-        #     H is the number of hidden units in this layer.        
-        self.d_w = np.zeros_like(self.w)
+        #     H is the number of hidden units in this layer.
+        # self.d_w = np.zeros_like(self.w)
+        self.d_w = np.dot(self.inputs.T, d_scores)
 
         # d_inputs:
         #     Derivatives of the loss w.r.t the previous layer's activations/outputs.
         #     A matrix of shape (N, H_-1)
         #     N is the number of data points.
         #     H_-1 is the number of hidden units in the previous layer.
-        d_inputs = np.zeros([d_scores.shape[0], self.w.shape[0]])
+        # d_inputs = np.zeros([d_scores.shape[0], self.w.shape[0]])
+        d_inputs = np.dot(d_scores, self.w.T)
 
         # End of the code to modify
         ###################################
 
 		# Compute the average value of the gradients, since
-        # we are minimizing the average loss. 
+        # we are minimizing the average loss.
         self.d_b /= d_scores.shape[0]
         self.d_w /= d_scores.shape[0]
-        
+
         return d_inputs
 
 
@@ -271,7 +276,7 @@ class GradientDescentOptimizer(object):
         self.steps = 0.0
         self.decay_steps = decay_steps
         self.decay_rate = decay_rate
-        
+
     def update(self, model):
         "Update model parameters."
         for layer in model.layers:
@@ -283,8 +288,8 @@ class GradientDescentOptimizer(object):
 
 
 # Utility functions.
-def sigmoid(x): 
-    return 1/(1+np.exp(-x))   
+def sigmoid(x):
+    return 1/(1+np.exp(-x))
 
 def d_sigmoid(a=None, x=None):
     if a is not None:
@@ -299,7 +304,7 @@ def relu(x):
 
 def d_relu(a=None, x=None):
     "Compute the derivative of RELU given activation (a) or input (x)."
-    if a is not None:    
+    if a is not None:
         d = np.zeros_like(a)
         d[np.where(a > 0.0)] = 1.0
         return d
@@ -325,7 +330,7 @@ def softmax(x):
     f = np.exp(shifted_x)
     p = f / np.sum(f, axis=1, keepdims=True)
     return p
-    
+
 
 def mean_cross_entropy(outputs, labels):
     n = labels.shape[0]

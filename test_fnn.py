@@ -42,7 +42,7 @@ class TestFNN(unittest.TestCase):
         self.m2.layers[2].w = np.array([[1, -2, 2, -2, 1],
                                         [-1, 1, 1, -1, -1]])
         self.m2.layers[2].b = np.array([[1, 0, -1, 1, 2]])
-        
+
     def test_forwardprop(self):
         # Test on the tiny subset of mnist.
         probs, loss = self.m1.forwardprop(toy_data, toy_labels)
@@ -65,6 +65,7 @@ class TestFNN(unittest.TestCase):
     def test_backprop(self):
         # Use gradient check to test on the tiny mnist
         # subset.
+        print 'TESTING BACKPROP: ', cg.check_backprop(self.m1, toy_data, toy_labels)
         self.assertTrue(
             cg.check_backprop(self.m1, toy_data, toy_labels) < 1e-4)
 
